@@ -1,0 +1,898 @@
+<!DOCTYPE html><html lang="en"><head>
+    <script>
+        window.FontAwesomeConfig = {
+          autoReplaceSvg: 'nest'
+        };
+      </script>
+    <script src="js/all.min.js"></script>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MinzXit - Let's Build World</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&amp;family=Geist+Mono:wght@400;500&amp;display=swap" rel="stylesheet">
+<script>
+tailwind.config = {
+  theme: {
+    extend: {
+      colors: {
+        ink: '#000000', paper: '#ffffff', fog: '#fcfcfc', mist: '#ebebeb', smoke: '#f5f5f5',
+        line: '#e4e4e4', ash: '#a4a4a4', steel: '#747474', graphite: '#525252',
+        gold: '#ffae04', cobalt: '#2d62ef', danger: '#e54b4f'
+      },
+      fontFamily: {
+        sans: ['Geist', 'sans-serif'],
+        serif: ['Georgia', 'serif'],
+        mono: ['"Geist Mono"', 'monospace']
+      },
+      borderRadius: { DEFAULT: '0.5rem' }
+    }
+  }
+}
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background:#000000; color:#fcfcfc; -webkit-font-smoothing: antialiased; }
+  ::selection { background:#ffae04; color:#000000; }
+
+  /* grain */
+  .grain::before {
+    content:""; position:fixed; inset:-50%; z-index:60; pointer-events:none; opacity:.06;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    animation: grain 6s steps(8) infinite;
+  }
+  @keyframes grain { 0%{transform:translate(0,0)} 25%{transform:translate(-3%,2%)} 50%{transform:translate(2%,-3%)} 75%{transform:translate(-2%,-1%)} 100%{transform:translate(0,0)} }
+
+  /* preloader */
+  #preloader { transition: transform 1s cubic-bezier(.76,0,.24,1); }
+  #preloader.done { transform: translateY(-100%); }
+
+  /* hero line reveal */
+  .line { display:block; overflow:hidden; padding-bottom:.06em; }
+  .line > span { display:inline-block; transform: translateY(115%); }
+  body.loaded .line > span { animation: rise 1.2s cubic-bezier(.2,.8,.2,1) forwards; }
+  body.loaded .d1 > span { animation-delay:.05s } body.loaded .d2 > span { animation-delay:.18s } body.loaded .d3 > span { animation-delay:.3s }
+  @keyframes rise { to { transform: translateY(0); } }
+  .hero-fade { opacity:0; transform: translateY(16px); transition: opacity 1s ease, transform 1s cubic-bezier(.2,.8,.2,1); }
+  body.loaded .hero-fade { opacity:1; transform:none; }
+  body.loaded .hf1 { transition-delay:.45s } body.loaded .hf2 { transition-delay:.6s } body.loaded .hf3 { transition-delay:.75s } body.loaded .hf4 { transition-delay:.9s }
+
+  /* reveal */
+  .reveal { transition: opacity 1.1s ease, transform 1.1s cubic-bezier(.2,.8,.2,1); }
+  .anim-ready .reveal:not(.in) { opacity:0; transform: translateY(40px); }
+  .anim-ready .reveal:not(.in) .bar-fill { width:0 !important; }
+  .reveal.in { opacity:1; transform:none; }
+  .reveal.r2 { transition-delay:.12s } .reveal.r3 { transition-delay:.24s } .reveal.r4 { transition-delay:.36s }
+
+  /* spotlight */
+  #hero { --x: 50%; --y: 40%; }
+  #hero-spot { background: radial-gradient(600px circle at var(--x) var(--y), rgba(255,255,255,.07), transparent 60%); }
+  #hero-grid {
+    background-image: linear-gradient(rgba(255,255,255,.045) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.045) 1px, transparent 1px);
+    background-size: 88px 88px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+            mask-image: radial-gradient(ellipse at 50% 40%, #000 30%, transparent 75%);
+  }
+
+  /* marquee */
+  .marquee { animation: marquee 38s linear infinite; }
+  .marquee-wrap:hover .marquee { animation-play-state: paused; }
+  @keyframes marquee { to { transform: translateX(-50%); } }
+
+  .spin-slow { animation: spin 22s linear infinite; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .outline-text { -webkit-text-stroke: 1px rgba(255,255,255,.22); color: transparent; transition: color .8s ease, -webkit-text-stroke-color .8s ease; }
+  .outline-text:hover { color:#fcfcfc; -webkit-text-stroke-color: #fcfcfc; }
+
+  .bar-fill { transition: width 1.6s cubic-bezier(.2,.8,.2,1); }
+
+  .word { transition: opacity .5s ease; }
+
+  /* cursor */
+  #cursor-ring { transition: width .35s ease, height .35s ease, background-color .35s ease, border-color .35s ease; }
+  #cursor-ring.active { width:88px; height:88px; background:#fcfcfc; border-color:#fcfcfc; }
+  #cursor-ring.active #cursor-label { opacity:1; }
+  @media (hover:none), (pointer:coarse) { #cursor-ring, #cursor-dot { display:none; } }
+
+  .i18n-swap [data-i18n], .i18n-swap [data-i18n-html] { opacity:0; filter: blur(4px); }
+  [data-i18n], [data-i18n-html] { transition: opacity .35s ease, filter .35s ease; }
+
+  .pulse-dot::after { content:""; position:absolute; inset:0; border-radius:9999px; background:#ffae04; animation: ping 2s cubic-bezier(0,0,.2,1) infinite; }
+  @keyframes ping { 75%,100% { transform: scale(2.6); opacity:0; } }
+
+  #mobile-menu { transition: opacity .5s ease, visibility .5s; }
+  .link-u { background: linear-gradient(currentColor,currentColor) 0 100% / 0 1px no-repeat; transition: background-size .5s cubic-bezier(.2,.8,.2,1); }
+  .link-u:hover { background-size: 100% 1px; }
+</style>
+</head>
+<body class="grain font-sans overflow-x-hidden">
+
+<!-- Preloader -->
+<div id="preloader" class="fixed inset-0 z-[100] bg-ink flex flex-col justify-between p-6 md:p-10">
+  <div class="flex justify-between font-mono text-xs uppercase tracking-[0.2em] text-steel">
+    <span>MinzXit®</span><span>Jepara — ID</span>
+  </div>
+  <div class="flex items-end justify-between">
+    <p class="font-serif italic text-2xl md:text-4xl text-ash">Khoirul Khastamin</p>
+    <span id="loader-count" class="font-mono text-6xl md:text-8xl text-fog tabular-nums">092</span>
+  </div>
+</div>
+
+<!-- Cursor -->
+<div id="cursor-dot" class="hidden lg:block fixed top-0 left-0 z-[90] w-1.5 h-1.5 rounded-full bg-fog pointer-events-none"></div>
+<div id="cursor-ring" class="hidden lg:flex fixed top-0 left-0 z-[89] w-9 h-9 rounded-full border border-white/30 pointer-events-none -translate-x-1/2 -translate-y-1/2 items-center justify-center mix-blend-difference" style="left: -100px; top: -100px;">
+  <span id="cursor-label" class="font-mono text-[10px] uppercase tracking-widest text-ink opacity-0 transition-opacity">View</span>
+</div>
+
+<!-- Progress -->
+<div id="progress" class="fixed top-0 left-0 h-[2px] w-0 bg-gold z-[70]" style="width: 0%;"></div>
+
+<!-- Header -->
+<header id="header" class="fixed top-0 inset-x-0 z-50 transition-all duration-500">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10 h-20 flex items-center justify-between">
+    <a href="#hero" id="logo" class="flex items-center gap-3 group">
+      <span class="w-9 h-9 rounded-lg border border-white/15 grid place-items-center font-serif italic text-lg text-fog group-hover:bg-fog group-hover:text-ink transition-colors duration-500">M</span>
+      <span class="font-medium tracking-tight text-fog">MinzXit<span class="text-gold">.</span></span>
+    </a>
+    <nav id="nav-links" class="hidden md:flex items-center gap-9 text-sm text-ash">
+      <a href="#about" class="link-u hover:text-fog transition-colors"><span class="font-mono text-[10px] text-graphite mr-1">01</span><span data-i18n="nav.about">About</span></a>
+      <a href="#skills" class="link-u hover:text-fog transition-colors"><span class="font-mono text-[10px] text-graphite mr-1">02</span><span data-i18n="nav.skills">Skills</span></a>
+      <a href="#work" class="link-u hover:text-fog transition-colors"><span class="font-mono text-[10px] text-graphite mr-1">03</span><span data-i18n="nav.work">Work</span></a>
+      <a href="#journey" class="link-u hover:text-fog transition-colors"><span class="font-mono text-[10px] text-graphite mr-1">04</span><span data-i18n="nav.journey">Journey</span></a>
+      <a href="#contact" class="link-u hover:text-fog transition-colors"><span class="font-mono text-[10px] text-graphite mr-1">05</span><span data-i18n="nav.contact">Contact</span></a>
+    </nav>
+    <div class="flex items-center gap-3">
+      <div id="lang-switch" class="relative flex items-center rounded-lg border border-white/10 p-1 font-mono text-[11px] tracking-widest">
+        <span id="lang-indicator" class="absolute top-1 bottom-1 rounded-md bg-fog transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)]" style="left: 8px; width: 35px;"></span>
+        <button data-lang="en" class="lang-btn relative z-10 px-2.5 py-1.5 transition-colors duration-500 text-ink">EN</button>
+        <button data-lang="id" class="lang-btn relative z-10 px-2.5 py-1.5 transition-colors duration-500 text-ash">ID</button>
+      </div>
+      <a href="#contact" class="magnetic hidden md:inline-flex items-center gap-2 rounded-lg bg-fog text-ink text-sm font-medium px-4 py-2.5 hover:bg-mist transition-colors" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;">
+        <span data-i18n="nav.cta">Let's talk</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs"></i>
+      </a>
+      <button id="menu-btn" class="md:hidden w-10 h-10 rounded-lg border border-white/10 grid place-items-center text-fog" aria-label="Menu"><i class="fa-solid fa-bars-staggered"></i></button>
+    </div>
+  </div>
+</header>
+
+<!-- Mobile menu -->
+<div id="mobile-menu" class="fixed inset-0 z-40 bg-ink/95 backdrop-blur-xl opacity-0 invisible md:hidden flex flex-col justify-center px-8">
+  <nav class="flex flex-col gap-6 text-4xl font-medium tracking-tight">
+    <a href="#about" class="m-link"><span class="font-mono text-xs text-steel mr-3">01</span><span data-i18n="nav.about">About</span></a>
+    <a href="#skills" class="m-link"><span class="font-mono text-xs text-steel mr-3">02</span><span data-i18n="nav.skills">Skills</span></a>
+    <a href="#work" class="m-link"><span class="font-mono text-xs text-steel mr-3">03</span><span data-i18n="nav.work">Work</span></a>
+    <a href="#journey" class="m-link"><span class="font-mono text-xs text-steel mr-3">04</span><span data-i18n="nav.journey">Journey</span></a>
+    <a href="#contact" class="m-link"><span class="font-mono text-xs text-steel mr-3">05</span><span data-i18n="nav.contact">Contact</span></a>
+  </nav>
+</div>
+
+<main id="main">
+
+<!-- HERO -->
+<section id="hero" class="relative h-[820px] md:h-[900px] overflow-hidden">
+  <div id="hero-grid" class="absolute inset-0"></div>
+  <div id="hero-spot" class="absolute inset-0"></div>
+
+  <div class="relative max-w-[1400px] mx-auto px-5 md:px-10 h-full flex flex-col pt-28 md:pt-32 pb-8">
+    <div id="hero-top" class="flex items-center justify-between font-mono text-[11px] uppercase tracking-[0.22em] text-steel hero-fade hf1">
+      <span data-i18n="hero.label">Portfolio — Vol. 01</span>
+      <span class="flex items-center gap-2.5 text-ash"><span class="relative w-1.5 h-1.5 rounded-full bg-gold pulse-dot"></span><span data-i18n="hero.status">Available for collaboration</span></span>
+    </div>
+
+    <div id="hero-name" class="mt-auto">
+      <p class="font-mono text-xs uppercase tracking-[0.22em] text-steel mb-6 hero-fade hf1"><span data-i18n="hero.aka">Also known as</span> <span class="text-gold">MinzXit</span></p>
+      <h1 class="text-[17vw] sm:text-[15vw] lg:text-[11.5rem] leading-[0.86] tracking-[-0.055em] font-medium text-fog">
+        <span class="line d1"><span>Khoirul</span></span>
+        <span class="line d2"><span class="md:pl-[1.1em] font-serif italic font-normal tracking-[-0.04em] text-ash">Khastamin</span></span>
+      </h1>
+    </div>
+
+    <div id="hero-bottom" class="mt-12 md:mt-14 grid grid-cols-1 md:grid-cols-12 gap-8 items-end">
+      <div class="md:col-span-5 hero-fade hf2">
+        <p class="text-lg md:text-xl leading-relaxed text-ash max-w-md" data-i18n="hero.desc">A software &amp; game development student at SMK Negeri 1 Bangsri — crafting clean interfaces and thoughtful code from Jepara, Indonesia.</p>
+      </div>
+      <div class="md:col-span-4 hero-fade hf3">
+        <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel mb-2" data-i18n="hero.currently">Currently</p>
+        <p class="text-2xl md:text-3xl tracking-tight text-fog">
+          <span id="role-wrap" class="relative inline-flex overflow-hidden align-bottom h-[1.25em]"><span id="role-text" class="inline-block transition-all duration-500 ease-[cubic-bezier(.2,.8,.2,1)]">Web Developer</span></span><span class="text-gold">.</span>
+        </p>
+      </div>
+      <div class="md:col-span-3 flex md:justify-end gap-3 hero-fade hf4">
+        <a href="#work" data-cursor="Work" class="magnetic group inline-flex items-center gap-3 rounded-lg bg-fog text-ink pl-5 pr-2 py-2 text-sm font-medium" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;">
+          <span data-i18n="hero.cta1">Selected work</span>
+          <span class="w-9 h-9 rounded-md bg-ink text-fog grid place-items-center overflow-hidden"><i class="fa-solid fa-arrow-down text-xs group-hover:translate-y-0.5 transition-transform"></i></span>
+        </a>
+      </div>
+    </div>
+
+    <div id="hero-meta" class="mt-10 pt-6 border-t border-white/10 grid grid-cols-2 md:grid-cols-4 gap-6 font-mono text-[11px] uppercase tracking-[0.18em] hero-fade hf4">
+      <div><p class="text-graphite mb-1.5" data-i18n="hero.based">Based in</p><p class="text-ash">Krasak, Bangsri — Jepara</p></div>
+      <div><p class="text-graphite mb-1.5" data-i18n="hero.time">Local time</p><p id="clock" class="text-ash tabular-nums">10:21:31 WIB</p></div>
+      <div><p class="text-graphite mb-1.5" data-i18n="hero.class">Class</p><p class="text-ash">X PPLG 2 · SMKN 1 Bangsri</p></div>
+      <div class="flex md:justify-end items-end"><a href="#about" class="flex items-center gap-3 text-ash hover:text-fog transition-colors"><span data-i18n="hero.scroll">Scroll to explore</span><span class="relative w-px h-8 bg-white/15 overflow-hidden"><span id="scroll-line" class="absolute inset-x-0 top-0 h-3 bg-gold"></span></span></a></div>
+    </div>
+  </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="relative py-28 md:py-40 border-t border-white/10">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div class="lg:col-span-3 reveal">
+        <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel flex items-center gap-3"><span class="text-gold">(01)</span><span data-i18n="about.label">About</span></p>
+      </div>
+      <div class="lg:col-span-9">
+        <p id="statement" class="text-3xl md:text-5xl leading-[1.15] tracking-[-0.03em] text-fog font-normal" data-i18n="about.statement" data-split="1"><span class="word" style="opacity: 1;">I'm</span> <span class="word" style="opacity: 1;">Khoirul</span> <span class="word" style="opacity: 1;">Khastamin</span> <span class="word" style="opacity: 1;">—</span> <span class="word" style="opacity: 1;">a</span> <span class="word" style="opacity: 1;">tenth-grader</span> <span class="word" style="opacity: 1;">who</span> <span class="word" style="opacity: 1;">believes</span> <span class="word" style="opacity: 1;">good</span> <span class="word" style="opacity: 1;">software</span> <span class="word" style="opacity: 1;">should</span> <span class="word" style="opacity: 1;">feel</span> <span class="word" style="opacity: 1;">quiet,</span> <span class="word" style="opacity: 1;">considered</span> <span class="word" style="opacity: 1;">and</span> <span class="word" style="opacity: 1;">honest.</span> <span class="word" style="opacity: 1;">I</span> <span class="word" style="opacity: 1;">learn</span> <span class="word" style="opacity: 1;">by</span> <span class="word" style="opacity: 1;">building:</span> <span class="word" style="opacity: 1;">small</span> <span class="word" style="opacity: 1;">websites,</span> <span class="word" style="opacity: 1;">playful</span> <span class="word" style="opacity: 1;">games</span> <span class="word" style="opacity: 1;">and</span> <span class="word" style="opacity: 1;">interfaces</span> <span class="word" style="opacity: 1;">that</span> <span class="word" style="opacity: 1;">respect</span> <span class="word" style="opacity: 1;">the</span> <span class="word" style="opacity: 1;">people</span> <span class="word" style="opacity: 1;">who</span> <span class="word" style="opacity: 1;">use</span> <span class="word" style="opacity: 1;">them.</span></p>
+      </div>
+    </div>
+
+    <div class="mt-24 grid grid-cols-1 lg:grid-cols-12 gap-8">
+      <!-- monogram -->
+      <div id="monogram-card" class="lg:col-span-4 reveal">
+        <div class="relative aspect-square rounded-lg border border-white/10 bg-white/[0.02] overflow-hidden grid place-items-center">
+          <div class="absolute inset-0 opacity-60" id="mono-grid"></div>
+          <svg viewBox="0 0 200 200" class="absolute w-[78%] h-[78%] spin-slow">
+            <defs><path id="circlePath" d="M100,100 m-80,0 a80,80 0 1,1 160,0 a80,80 0 1,1 -160,0"></path></defs>
+            <text fill="#747474" font-family="Geist Mono, monospace" font-size="10.5" letter-spacing="4.2">
+              <textPath href="#circlePath">MINZXIT • DEVELOPER • DESIGNER • JEPARA • </textPath>
+            </text>
+          </svg>
+          <div class="relative text-center">
+            <p class="font-serif italic text-7xl md:text-8xl text-fog leading-none">K<span class="text-ash">k</span></p>
+            <p class="mt-3 font-mono text-[10px] uppercase tracking-[0.3em] text-steel">Coding since 2023</p>
+          </div>
+          <span class="absolute top-5 left-5 w-1.5 h-1.5 rounded-full bg-gold"></span>
+          <span class="absolute bottom-5 right-5 font-mono text-[10px] tracking-[0.2em] text-graphite">06°36′S 110°44′E</span>
+        </div>
+      </div>
+
+      <!-- info grid -->
+      <div id="info-grid" class="lg:col-span-8 grid grid-cols-1 sm:grid-cols-2 border-t border-l border-white/10 rounded-lg overflow-hidden">
+        <div class="reveal p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.name">Full name</p>
+          <p class="mt-3 text-xl text-fog">Khoirul Khastamin</p>
+        </div>
+        <div class="reveal r2 p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.alias">Alias</p>
+          <p class="mt-3 text-xl text-fog">MinzXit</p>
+        </div>
+        <div class="reveal p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.school">School</p>
+          <p class="mt-3 text-xl text-fog">SMK Negeri 1 Bangsri</p>
+        </div>
+        <div class="reveal r2 p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.class">Class</p>
+          <p class="mt-3 text-xl text-fog">X PPLG 2</p>
+        </div>
+        <div class="reveal p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.major">Major</p>
+          <p class="mt-3 text-xl text-fog" data-i18n="about.majorv">Software &amp; Game Development</p>
+        </div>
+        <div class="reveal r2 p-7 border-r border-b border-white/10 hover:bg-white/[0.03] transition-colors duration-500">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="about.address">Address</p>
+          <p class="mt-3 text-xl text-fog">Krasak, Bangsri, Jepara</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- stats -->
+    <div id="stats" class="mt-20 grid grid-cols-2 md:grid-cols-4 gap-y-12">
+      <div class="reveal md:border-r border-white/10 md:pr-8">
+        <p class="text-6xl md:text-7xl tracking-[-0.05em] text-fog font-light"><span class="count" data-to="10">10</span><span class="text-gold text-4xl align-top">th</span></p>
+        <p class="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="stat.1">Grade, PPLG</p>
+      </div>
+      <div class="reveal r2 md:border-r border-white/10 md:px-8">
+        <p class="text-6xl md:text-7xl tracking-[-0.05em] text-fog font-light"><span class="count" data-to="6">6</span><span class="text-gold text-4xl align-top">+</span></p>
+        <p class="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="stat.2">Projects built</p>
+      </div>
+      <div class="reveal r3 md:border-r border-white/10 md:px-8">
+        <p class="text-6xl md:text-7xl tracking-[-0.05em] text-fog font-light"><span class="count" data-to="12">12</span></p>
+        <p class="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="stat.3">Tools &amp; languages</p>
+      </div>
+      <div class="reveal r4 md:pl-8">
+        <p class="text-6xl md:text-7xl tracking-[-0.05em] text-fog font-light"><span class="count" data-to="500">500</span><span class="text-gold text-4xl align-top">+</span></p>
+        <p class="mt-3 font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="stat.4">Hours of practice</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SKILLS -->
+<section id="skills" class="relative py-28 md:py-40 border-t border-white/10">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-16 md:mb-24">
+      <div class="lg:col-span-3 reveal">
+        <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel flex items-center gap-3"><span class="text-gold">(02)</span><span data-i18n="skills.label">Expertise</span></p>
+      </div>
+      <h2 class="lg:col-span-9 text-4xl md:text-6xl leading-[1.05] tracking-[-0.04em] text-fog reveal r2" data-i18n-html="skills.title">Tools I use to turn ideas into <em class="font-serif text-ash">working things.</em></h2>
+    </div>
+
+    <div id="skill-list" class="border-t border-white/10">
+      <!-- row -->
+      <div class="skill-row group reveal grid grid-cols-12 gap-4 md:gap-8 items-center py-8 md:py-10 border-b border-white/10 hover:bg-white/[0.02] transition-colors duration-500 md:px-4 -mx-0">
+        <span class="col-span-2 md:col-span-1 font-mono text-xs text-graphite">01</span>
+        <h3 class="col-span-10 md:col-span-4 text-2xl md:text-3xl tracking-tight text-fog transition-transform duration-500 group-hover:translate-x-2" data-i18n="s1.t">Web Development</h3>
+        <p class="col-span-12 md:col-span-4 text-ash leading-relaxed" data-i18n="s1.d">Semantic HTML, modern CSS and vanilla JavaScript — responsive by default.</p>
+        <div class="col-span-12 md:col-span-3">
+          <div class="flex justify-between font-mono text-[11px] text-steel mb-2"><span>HTML · CSS · JS · Tailwind</span><span>85%</span></div>
+          <div class="h-px bg-white/10"><div class="bar-fill h-px bg-fog" data-w="85%" style="width: 85%;"></div></div>
+        </div>
+      </div>
+      <div class="skill-row group reveal grid grid-cols-12 gap-4 md:gap-8 items-center py-8 md:py-10 border-b border-white/10 hover:bg-white/[0.02] transition-colors duration-500 md:px-4">
+        <span class="col-span-2 md:col-span-1 font-mono text-xs text-graphite">02</span>
+        <h3 class="col-span-10 md:col-span-4 text-2xl md:text-3xl tracking-tight text-fog transition-transform duration-500 group-hover:translate-x-2" data-i18n="s2.t">Interface Design</h3>
+        <p class="col-span-12 md:col-span-4 text-ash leading-relaxed" data-i18n="s2.d">Wireframes, typography and layout systems crafted in Figma.</p>
+        <div class="col-span-12 md:col-span-3">
+          <div class="flex justify-between font-mono text-[11px] text-steel mb-2"><span>Figma · Typography</span><span>78%</span></div>
+          <div class="h-px bg-white/10"><div class="bar-fill h-px bg-fog" data-w="78%" style="width: 78%;"></div></div>
+        </div>
+      </div>
+      <div class="skill-row group reveal grid grid-cols-12 gap-4 md:gap-8 items-center py-8 md:py-10 border-b border-white/10 hover:bg-white/[0.02] transition-colors duration-500 md:px-4">
+        <span class="col-span-2 md:col-span-1 font-mono text-xs text-graphite">03</span>
+        <h3 class="col-span-10 md:col-span-4 text-2xl md:text-3xl tracking-tight text-fog transition-transform duration-500 group-hover:translate-x-2" data-i18n="s3.t">Game Development</h3>
+        <p class="col-span-12 md:col-span-4 text-ash leading-relaxed" data-i18n="s3.d">2D game mechanics, physics and logic with Unity and C#.</p>
+        <div class="col-span-12 md:col-span-3">
+          <div class="flex justify-between font-mono text-[11px] text-steel mb-2"><span>Unity · C#</span><span>64%</span></div>
+          <div class="h-px bg-white/10"><div class="bar-fill h-px bg-fog" data-w="64%" style="width: 64%;"></div></div>
+        </div>
+      </div>
+      <div class="skill-row group reveal grid grid-cols-12 gap-4 md:gap-8 items-center py-8 md:py-10 border-b border-white/10 hover:bg-white/[0.02] transition-colors duration-500 md:px-4">
+        <span class="col-span-2 md:col-span-1 font-mono text-xs text-graphite">04</span>
+        <h3 class="col-span-10 md:col-span-4 text-2xl md:text-3xl tracking-tight text-fog transition-transform duration-500 group-hover:translate-x-2" data-i18n="s4.t">Backend Basics</h3>
+        <p class="col-span-12 md:col-span-4 text-ash leading-relaxed" data-i18n="s4.d">PHP, MySQL and simple CRUD applications that actually work.</p>
+        <div class="col-span-12 md:col-span-3">
+          <div class="flex justify-between font-mono text-[11px] text-steel mb-2"><span>PHP · MySQL</span><span>60%</span></div>
+          <div class="h-px bg-white/10"><div class="bar-fill h-px bg-fog" data-w="60%" style="width: 60%;"></div></div>
+        </div>
+      </div>
+      <div class="skill-row group reveal grid grid-cols-12 gap-4 md:gap-8 items-center py-8 md:py-10 border-b border-white/10 hover:bg-white/[0.02] transition-colors duration-500 md:px-4">
+        <span class="col-span-2 md:col-span-1 font-mono text-xs text-graphite">05</span>
+        <h3 class="col-span-10 md:col-span-4 text-2xl md:text-3xl tracking-tight text-fog transition-transform duration-500 group-hover:translate-x-2" data-i18n="s5.t">Workflow</h3>
+        <p class="col-span-12 md:col-span-4 text-ash leading-relaxed" data-i18n="s5.d">Version control with Git &amp; GitHub, VS Code and the terminal.</p>
+        <div class="col-span-12 md:col-span-3">
+          <div class="flex justify-between font-mono text-[11px] text-steel mb-2"><span>Git · GitHub · CLI</span><span>72%</span></div>
+          <div class="h-px bg-white/10"><div class="bar-fill h-px bg-fog" data-w="72%" style="width: 72%;"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- marquee -->
+  <div id="tech-marquee" class="marquee-wrap mt-24 border-y border-white/10 py-8 overflow-hidden">
+    <div class="marquee flex w-max items-center gap-14 text-3xl md:text-5xl tracking-tight text-graphite whitespace-nowrap">
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-html5 text-2xl md:text-3xl"></i>HTML5</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-css3-alt text-2xl md:text-3xl"></i><em class="font-serif">CSS3</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-js text-2xl md:text-3xl"></i>JavaScript</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-figma text-2xl md:text-3xl"></i><em class="font-serif">Figma</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-unity text-2xl md:text-3xl"></i>Unity</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-php text-2xl md:text-3xl"></i><em class="font-serif">PHP</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-solid fa-database text-2xl md:text-3xl"></i>MySQL</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-python text-2xl md:text-3xl"></i><em class="font-serif">Python</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-git-alt text-2xl md:text-3xl"></i>Git</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-github text-2xl md:text-3xl"></i><em class="font-serif">GitHub</em></span><span class="text-gold text-base">✦</span>
+      <!-- duplicate -->
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-html5 text-2xl md:text-3xl"></i>HTML5</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-css3-alt text-2xl md:text-3xl"></i><em class="font-serif">CSS3</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-js text-2xl md:text-3xl"></i>JavaScript</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-figma text-2xl md:text-3xl"></i><em class="font-serif">Figma</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-unity text-2xl md:text-3xl"></i>Unity</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-php text-2xl md:text-3xl"></i><em class="font-serif">PHP</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-solid fa-database text-2xl md:text-3xl"></i>MySQL</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-python text-2xl md:text-3xl"></i><em class="font-serif">Python</em></span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-git-alt text-2xl md:text-3xl"></i>Git</span><span class="text-gold text-base">✦</span>
+      <span class="flex items-center gap-4 hover:text-fog transition-colors"><i class="fa-brands fa-github text-2xl md:text-3xl"></i><em class="font-serif">GitHub</em></span><span class="text-gold text-base">✦</span>
+    </div>
+  </div>
+</section>
+
+<!-- WORK -->
+<section id="work" class="relative py-28 md:py-40 border-t border-white/10">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 mb-16 md:mb-24 items-end">
+      <div class="lg:col-span-3 reveal">
+        <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel flex items-center gap-3"><span class="text-gold">(03)</span><span data-i18n="work.label">Selected work</span></p>
+      </div>
+      <h2 class="lg:col-span-6 text-4xl md:text-6xl leading-[1.05] tracking-[-0.04em] text-fog reveal r2" data-i18n-html="work.title">A few things I've <em class="font-serif text-ash">built &amp; learned from.</em></h2>
+      <div class="lg:col-span-3 lg:text-right reveal r3">
+        <a href="#" class="link-u inline-flex items-center gap-2 text-sm text-ash hover:text-fog transition-colors"><i class="fa-brands fa-github"></i><span data-i18n="work.all">View all on GitHub</span><i class="fa-solid fa-arrow-right -rotate-45 text-xs"></i></a>
+      </div>
+    </div>
+
+    <div id="projects" class="grid grid-cols-1 md:grid-cols-2 gap-x-8 lg:gap-x-12">
+      <div class="flex flex-col gap-20">
+        <a href="#" id="project-1" data-cursor="View" class="group reveal block">
+          <div class="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] aspect-[4/3]">
+            <img src="images/gen_1f9efd343d_8f0510ad41c57b51.png" alt="Bangsri Eats project" class="w-full h-full object-cover opacity-80 scale-[1.02] group-hover:scale-110 group-hover:opacity-100 transition-all duration-[1400ms] ease-[cubic-bezier(.2,.8,.2,1)]">
+            <div class="absolute top-4 left-4 flex gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">Web</span>
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">2025</span>
+            </div>
+          </div>
+          <div class="mt-6 flex items-start justify-between gap-6">
+            <div>
+              <p class="font-mono text-xs text-graphite mb-2">01</p>
+              <h3 class="text-3xl tracking-tight text-fog">Bangsri Eats</h3>
+              <p class="mt-2 text-ash max-w-sm" data-i18n="p1.d">A culinary directory for local food spots around Bangsri.</p>
+            </div>
+            <span class="shrink-0 w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-fog group-hover:bg-fog group-hover:text-ink transition-colors duration-500"><i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500"></i></span>
+          </div>
+        </a>
+        <a href="#" id="project-3" data-cursor="Play" class="group reveal block">
+          <div class="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] aspect-[4/3]">
+            <img src="images/gen_7610106008_85311735ce724bd9.png" alt="Pixel Runner game" class="w-full h-full object-cover opacity-80 scale-[1.02] group-hover:scale-110 group-hover:opacity-100 transition-all duration-[1400ms] ease-[cubic-bezier(.2,.8,.2,1)]">
+            <div class="absolute top-4 left-4 flex gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">Game</span>
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">Unity</span>
+            </div>
+          </div>
+          <div class="mt-6 flex items-start justify-between gap-6">
+            <div>
+              <p class="font-mono text-xs text-graphite mb-2">03</p>
+              <h3 class="text-3xl tracking-tight text-fog">Pixel Runner</h3>
+              <p class="mt-2 text-ash max-w-sm" data-i18n="p3.d">A minimalist 2D platformer built in Unity.</p>
+            </div>
+            <span class="shrink-0 w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-fog group-hover:bg-fog group-hover:text-ink transition-colors duration-500"><i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500"></i></span>
+          </div>
+        </a>
+      </div>
+      <div class="flex flex-col gap-20 mt-20 md:mt-40">
+        <a href="#" id="project-2" data-cursor="View" class="group reveal block">
+          <div class="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] aspect-[4/3]">
+            <img src="images/gen_b203852009_7aba68ce3c4b9fb9.png" alt="PPLG Hub dashboard" class="w-full h-full object-cover opacity-80 scale-[1.02] group-hover:scale-110 group-hover:opacity-100 transition-all duration-[1400ms] ease-[cubic-bezier(.2,.8,.2,1)]">
+            <div class="absolute top-4 left-4 flex gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">Web App</span>
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">2025</span>
+            </div>
+          </div>
+          <div class="mt-6 flex items-start justify-between gap-6">
+            <div>
+              <p class="font-mono text-xs text-graphite mb-2">02</p>
+              <h3 class="text-3xl tracking-tight text-fog">PPLG Hub</h3>
+              <p class="mt-2 text-ash max-w-sm" data-i18n="p2.d">A class dashboard for schedules, tasks and announcements.</p>
+            </div>
+            <span class="shrink-0 w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-fog group-hover:bg-fog group-hover:text-ink transition-colors duration-500"><i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500"></i></span>
+          </div>
+        </a>
+        <a href="#" id="project-4" data-cursor="View" class="group reveal block">
+          <div class="relative overflow-hidden rounded-lg border border-white/10 bg-white/[0.03] aspect-[4/3]">
+            <img src="images/gen_f09df2f0ef_9896a23248187de7.png" alt="Kasir Mini point of sale" class="w-full h-full object-cover opacity-80 scale-[1.02] group-hover:scale-110 group-hover:opacity-100 transition-all duration-[1400ms] ease-[cubic-bezier(.2,.8,.2,1)]">
+            <div class="absolute top-4 left-4 flex gap-2 font-mono text-[10px] uppercase tracking-[0.18em]">
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">PHP</span>
+              <span class="px-2.5 py-1 rounded-md bg-ink/70 backdrop-blur border border-white/10 text-ash">2024</span>
+            </div>
+          </div>
+          <div class="mt-6 flex items-start justify-between gap-6">
+            <div>
+              <p class="font-mono text-xs text-graphite mb-2">04</p>
+              <h3 class="text-3xl tracking-tight text-fog">Kasir Mini</h3>
+              <p class="mt-2 text-ash max-w-sm" data-i18n="p4.d">A simple point-of-sale system for small local shops.</p>
+            </div>
+            <span class="shrink-0 w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-fog group-hover:bg-fog group-hover:text-ink transition-colors duration-500"><i class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500"></i></span>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- JOURNEY -->
+<section id="journey" class="relative py-28 md:py-40 border-t border-white/10">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10 grid grid-cols-1 lg:grid-cols-12 gap-12">
+    <div class="lg:col-span-4">
+      <div class="lg:sticky lg:top-32">
+        <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel flex items-center gap-3 reveal"><span class="text-gold">(04)</span><span data-i18n="journey.label">Journey</span></p>
+        <h2 class="mt-8 text-4xl md:text-6xl leading-[1.05] tracking-[-0.04em] text-fog reveal r2" data-i18n-html="journey.title">Every expert was once <em class="font-serif text-ash">a beginner.</em></h2>
+      </div>
+    </div>
+    <div id="timeline" class="lg:col-span-7 lg:col-start-6 relative">
+      <div class="absolute left-[7px] top-2 bottom-2 w-px bg-white/10"><div id="timeline-fill" class="w-px bg-gold h-0" style="height: 0%;"></div></div>
+
+      <div class="tl-item reveal relative pl-12 pb-16">
+        <span class="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border border-gold bg-ink grid place-items-center"><span class="w-[5px] h-[5px] rounded-full bg-gold"></span></span>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-gold" data-i18n="j1.y">2025 — Present</p>
+        <h3 class="mt-3 text-2xl md:text-3xl tracking-tight text-fog" data-i18n="j1.t">Joined SMK Negeri 1 Bangsri</h3>
+        <p class="mt-3 text-ash leading-relaxed max-w-lg" data-i18n="j1.d">Class X PPLG 2 — studying the fundamentals of software engineering and game development.</p>
+      </div>
+      <div class="tl-item reveal relative pl-12 pb-16">
+        <span class="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border border-white/25 bg-ink"></span>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-steel">2024</p>
+        <h3 class="mt-3 text-2xl md:text-3xl tracking-tight text-fog" data-i18n="j2.t">Discovered design &amp; games</h3>
+        <p class="mt-3 text-ash leading-relaxed max-w-lg" data-i18n="j2.d">Started exploring Figma, pixel art and the logic behind simple games.</p>
+      </div>
+      <div class="tl-item reveal relative pl-12 pb-16">
+        <span class="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border border-white/25 bg-ink"></span>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-steel">2023</p>
+        <h3 class="mt-3 text-2xl md:text-3xl tracking-tight text-fog" data-i18n="j3.t">Wrote my first line of code</h3>
+        <p class="mt-3 text-ash leading-relaxed max-w-lg" data-i18n="j3.d">A plain HTML page — and the curiosity never stopped.</p>
+      </div>
+      <div class="tl-item reveal relative pl-12">
+        <span class="absolute left-0 top-1.5 w-[15px] h-[15px] rounded-full border border-dashed border-white/25 bg-ink"></span>
+        <p class="font-mono text-xs uppercase tracking-[0.2em] text-steel" data-i18n="j4.y">Next</p>
+        <h3 class="mt-3 text-2xl md:text-3xl tracking-tight text-fog" data-i18n="j4.t">Building real products</h3>
+        <p class="mt-3 text-ash leading-relaxed max-w-lg" data-i18n="j4.d">Internships, open-source contributions and shipping apps that people actually use.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- CONTACT -->
+<section id="contact" class="relative py-28 md:py-40 border-t border-white/10 overflow-hidden">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10">
+    <p class="font-mono text-[11px] uppercase tracking-[0.22em] text-steel flex items-center gap-3 reveal"><span class="text-gold">(05)</span><span data-i18n="contact.label">Contact</span></p>
+    <h2 class="mt-8 text-5xl sm:text-6xl md:text-8xl leading-[0.95] tracking-[-0.05em] text-fog max-w-5xl reveal r2" data-i18n-html="contact.title">Let's build something <em class="font-serif text-ash">meaningful.</em></h2>
+
+    <div class="mt-20 grid grid-cols-1 lg:grid-cols-12 gap-12">
+      <div id="contact-info" class="lg:col-span-5 space-y-10">
+        <p class="text-lg text-ash leading-relaxed max-w-md reveal" data-i18n="contact.desc">Open for school projects, collaborations and friendly conversations about code and design.</p>
+
+        <div class="reveal r2">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-graphite mb-3">Email</p>
+          <button id="copy-email" class="group flex items-center gap-4 text-2xl md:text-3xl tracking-tight text-fog">
+            <span class="link-u">hello@minzxit.dev</span>
+            <span class="w-10 h-10 rounded-lg border border-white/15 grid place-items-center text-sm text-ash group-hover:bg-fog group-hover:text-ink transition-colors"><i id="copy-icon" class="fa-regular fa-copy"></i></span>
+          </button>
+          <p id="copy-msg" class="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-gold opacity-0 transition-opacity" data-i18n="contact.copied">Copied to clipboard</p>
+        </div>
+
+        <div class="reveal r3">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-graphite mb-3" data-i18n="contact.location">Location</p>
+          <p class="text-lg text-fog">Krasak, Bangsri, Jepara</p>
+          <p class="text-ash" data-i18n="contact.region">Central Java, Indonesia</p>
+        </div>
+
+        <div class="reveal r4">
+          <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-graphite mb-4" data-i18n="contact.social">Elsewhere</p>
+          <div class="flex flex-wrap gap-3">
+            <a href="#" class="magnetic w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-ash hover:bg-fog hover:text-ink transition-colors" aria-label="Instagram" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;"><i class="fa-brands fa-instagram"></i></a>
+            <a href="#" class="magnetic w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-ash hover:bg-fog hover:text-ink transition-colors" aria-label="GitHub" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;"><i class="fa-brands fa-github"></i></a>
+            <a href="#" class="magnetic w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-ash hover:bg-fog hover:text-ink transition-colors" aria-label="TikTok" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;"><i class="fa-brands fa-tiktok"></i></a>
+            <a href="#" class="magnetic w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-ash hover:bg-fog hover:text-ink transition-colors" aria-label="WhatsApp" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;"><i class="fa-brands fa-whatsapp"></i></a>
+            <a href="#" class="magnetic w-12 h-12 rounded-lg border border-white/15 grid place-items-center text-ash hover:bg-fog hover:text-ink transition-colors" aria-label="LinkedIn" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;"><i class="fa-brands fa-linkedin-in"></i></a>
+          </div>
+        </div>
+      </div>
+
+      <form id="contact-form" class="lg:col-span-7 reveal r2 rounded-lg border border-white/10 bg-white/[0.02] p-6 md:p-10">
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <label class="block">
+            <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="form.name">Your name</span>
+            <input required="" type="text" data-i18n-ph="form.name.ph" placeholder="Your full name" class="mt-3 w-full bg-transparent border-b border-white/15 py-3 text-fog placeholder:text-graphite focus:outline-none focus:border-gold transition-colors">
+          </label>
+          <label class="block">
+            <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="form.email">Email address</span>
+            <input required="" type="email" placeholder="you@email.com" class="mt-3 w-full bg-transparent border-b border-white/15 py-3 text-fog placeholder:text-graphite focus:outline-none focus:border-gold transition-colors">
+          </label>
+        </div>
+        <div class="mt-8">
+          <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="form.topic">I'm interested in</span>
+          <div id="topic-chips" class="mt-4 flex flex-wrap gap-2">
+            <button type="button" class="chip px-4 py-2 rounded-lg border border-white/15 text-sm text-ash hover:border-white/40 transition-colors" data-i18n="chip.1">Collaboration</button>
+            <button type="button" class="chip px-4 py-2 rounded-lg border border-white/15 text-sm text-ash hover:border-white/40 transition-colors" data-i18n="chip.2">School project</button>
+            <button type="button" class="chip px-4 py-2 rounded-lg border border-white/15 text-sm text-ash hover:border-white/40 transition-colors" data-i18n="chip.3">Website</button>
+            <button type="button" class="chip px-4 py-2 rounded-lg border border-white/15 text-sm text-ash hover:border-white/40 transition-colors" data-i18n="chip.4">Just saying hi</button>
+          </div>
+        </div>
+        <label class="block mt-8">
+          <span class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="form.msg">Message</span>
+          <textarea required="" rows="4" data-i18n-ph="form.msg.ph" placeholder="Tell me about your idea…" class="mt-3 w-full bg-transparent border-b border-white/15 py-3 text-fog placeholder:text-graphite focus:outline-none focus:border-gold transition-colors resize-none"></textarea>
+        </label>
+        <div class="mt-10 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <p id="form-status" class="font-mono text-[11px] uppercase tracking-[0.2em] text-steel" data-i18n="form.note">Usually replies within a day</p>
+          <button type="submit" id="send-btn" class="magnetic group inline-flex items-center justify-center gap-3 rounded-lg bg-fog text-ink pl-6 pr-2 py-2 font-medium" style="transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1), background-color 0.3s, color 0.3s;">
+            <span data-i18n="form.send">Send message</span>
+            <span class="w-10 h-10 rounded-md bg-ink text-fog grid place-items-center"><i id="send-icon" class="fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500"></i></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+</main>
+
+<!-- FOOTER -->
+<footer id="footer" class="relative border-t border-white/10 pt-16 pb-8 overflow-hidden">
+  <div class="max-w-[1400px] mx-auto px-5 md:px-10">
+    <div class="flex flex-col md:flex-row justify-between gap-6 font-mono text-[11px] uppercase tracking-[0.2em] text-steel">
+      <p><span data-i18n="footer.by">Designed &amp; built by</span> <span class="text-fog">MinzXit</span></p>
+      <p>SMK Negeri 1 Bangsri — X PPLG 2</p>
+      <a href="#hero" class="flex items-center gap-2 hover:text-fog transition-colors"><span data-i18n="footer.top">Back to top</span><i class="fa-solid fa-arrow-up"></i></a>
+    </div>
+    <p id="footer-word" class="outline-text mt-10 text-[22vw] lg:text-[17rem] leading-[0.8] tracking-[-0.06em] font-semibold text-center select-none">MinzXit</p>
+    <div class="mt-8 flex flex-col sm:flex-row justify-between gap-3 font-mono text-[11px] uppercase tracking-[0.2em] text-graphite">
+      <p>© 2025 Khoirul Khastamin. <span data-i18n="footer.rights">All rights reserved.</span></p>
+      <p>Jepara, Indonesia</p>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  const dict = {
+    en: {
+      'nav.about':'About','nav.skills':'Skills','nav.work':'Work','nav.journey':'Journey','nav.contact':'Contact','nav.cta':"Let's talk",
+      'hero.label':'Portfolio — Vol. 01','hero.status':'Available for collaboration','hero.aka':'Also known as',
+      'hero.desc':'A software & game development student at SMK Negeri 1 Bangsri — crafting clean interfaces and thoughtful code from Jepara, Indonesia.',
+      'hero.currently':'Currently','hero.cta1':'Selected work','hero.based':'Based in','hero.time':'Local time','hero.class':'Class','hero.scroll':'Scroll to explore',
+      'about.label':'About',
+      'about.statement':"I'm Khoirul Khastamin — a tenth-grader who believes good software should feel quiet, considered and honest. I learn by building: small websites, playful games and interfaces that respect the people who use them.",
+      'about.name':'Full name','about.alias':'Alias','about.school':'School','about.class':'Class','about.major':'Major','about.majorv':'Software & Game Development','about.address':'Address',
+      'stat.1':'Grade, PPLG','stat.2':'Projects built','stat.3':'Tools & languages','stat.4':'Hours of practice',
+      'skills.label':'Expertise','skills.title':'Tools I use to turn ideas into <em class="font-serif text-ash">working things.</em>',
+      's1.t':'Web Development','s1.d':'Semantic HTML, modern CSS and vanilla JavaScript — responsive by default.',
+      's2.t':'Interface Design','s2.d':'Wireframes, typography and layout systems crafted in Figma.',
+      's3.t':'Game Development','s3.d':'2D game mechanics, physics and logic with Unity and C#.',
+      's4.t':'Backend Basics','s4.d':'PHP, MySQL and simple CRUD applications that actually work.',
+      's5.t':'Workflow','s5.d':'Version control with Git & GitHub, VS Code and the terminal.',
+      'work.label':'Selected work','work.title':'A few things I\'ve <em class="font-serif text-ash">built & learned from.</em>','work.all':'View all on GitHub',
+      'p1.d':'A culinary directory for local food spots around Bangsri.','p2.d':'A class dashboard for schedules, tasks and announcements.',
+      'p3.d':'A minimalist 2D platformer built in Unity.','p4.d':'A simple point-of-sale system for small local shops.',
+      'journey.label':'Journey','journey.title':'Every expert was once <em class="font-serif text-ash">a beginner.</em>',
+      'j1.y':'2025 — Present','j1.t':'Joined SMK Negeri 1 Bangsri','j1.d':'Class X PPLG 2 — studying the fundamentals of software engineering and game development.',
+      'j2.t':'Discovered design & games','j2.d':'Started exploring Figma, pixel art and the logic behind simple games.',
+      'j3.t':'Wrote my first line of code','j3.d':'A plain HTML page — and the curiosity never stopped.',
+      'j4.y':'Next','j4.t':'Building real products','j4.d':'Internships, open-source contributions and shipping apps that people actually use.',
+      'contact.label':'Contact','contact.title':'Let\'s build something <em class="font-serif text-ash">meaningful.</em>',
+      'contact.desc':'Open for school projects, collaborations and friendly conversations about code and design.',
+      'contact.copied':'Copied to clipboard','contact.location':'Location','contact.region':'Central Java, Indonesia','contact.social':'Elsewhere',
+      'form.name':'Your name','form.name.ph':'Your full name','form.email':'Email address','form.topic':"I'm interested in",
+      'chip.1':'Collaboration','chip.2':'School project','chip.3':'Website','chip.4':'Just saying hi',
+      'form.msg':'Message','form.msg.ph':'Tell me about your idea…','form.note':'Usually replies within a day','form.send':'Send message',
+      'form.sent':'Message sent — thank you!',
+      'footer.by':'Designed & built by','footer.top':'Back to top','footer.rights':'All rights reserved.',
+      roles:['Web Developer','UI Designer','Game Maker','Lifelong Learner'], cursorView:'View'
+    },
+    id: {
+      'nav.about':'Tentang','nav.skills':'Keahlian','nav.work':'Karya','nav.journey':'Perjalanan','nav.contact':'Kontak','nav.cta':'Mari bicara',
+      'hero.label':'Portofolio — Vol. 01','hero.status':'Terbuka untuk kolaborasi','hero.aka':'Juga dikenal sebagai',
+      'hero.desc':'Siswa Pengembangan Perangkat Lunak & Gim di SMK Negeri 1 Bangsri — merancang antarmuka yang rapi dan kode yang bermakna dari Jepara, Indonesia.',
+      'hero.currently':'Saat ini','hero.cta1':'Karya pilihan','hero.based':'Berdomisili di','hero.time':'Waktu lokal','hero.class':'Kelas','hero.scroll':'Gulir untuk menjelajah',
+      'about.label':'Tentang',
+      'about.statement':'Saya Khoirul Khastamin — siswa kelas sepuluh yang percaya bahwa perangkat lunak yang baik harus terasa tenang, terencana, dan jujur. Saya belajar dengan membangun: situs kecil, gim yang menyenangkan, dan antarmuka yang menghargai penggunanya.',
+      'about.name':'Nama lengkap','about.alias':'Nama panggilan','about.school':'Sekolah','about.class':'Kelas','about.major':'Jurusan','about.majorv':'Pengembangan Perangkat Lunak & Gim','about.address':'Alamat',
+      'stat.1':'Kelas, PPLG','stat.2':'Proyek dibuat','stat.3':'Alat & bahasa','stat.4':'Jam latihan',
+      'skills.label':'Keahlian','skills.title':'Alat yang saya gunakan untuk mengubah ide menjadi <em class="font-serif text-ash">sesuatu yang nyata.</em>',
+      's1.t':'Pengembangan Web','s1.d':'HTML semantik, CSS modern, dan JavaScript murni — responsif sejak awal.',
+      's2.t':'Desain Antarmuka','s2.d':'Wireframe, tipografi, dan sistem tata letak yang dirancang di Figma.',
+      's3.t':'Pengembangan Gim','s3.d':'Mekanika, fisika, dan logika gim 2D dengan Unity dan C#.',
+      's4.t':'Dasar Backend','s4.d':'PHP, MySQL, dan aplikasi CRUD sederhana yang benar-benar berfungsi.',
+      's5.t':'Alur Kerja','s5.d':'Kontrol versi dengan Git & GitHub, VS Code, dan terminal.',
+      'work.label':'Karya pilihan','work.title':'Beberapa hal yang telah saya <em class="font-serif text-ash">bangun & pelajari.</em>','work.all':'Lihat semua di GitHub',
+      'p1.d':'Direktori kuliner untuk tempat makan lokal di sekitar Bangsri.','p2.d':'Dasbor kelas untuk jadwal, tugas, dan pengumuman.',
+      'p3.d':'Gim platformer 2D minimalis yang dibuat dengan Unity.','p4.d':'Sistem kasir sederhana untuk toko-toko kecil.',
+      'journey.label':'Perjalanan','journey.title':'Setiap ahli pernah menjadi <em class="font-serif text-ash">seorang pemula.</em>',
+      'j1.y':'2025 — Sekarang','j1.t':'Bergabung di SMK Negeri 1 Bangsri','j1.d':'Kelas X PPLG 2 — mempelajari dasar rekayasa perangkat lunak dan pengembangan gim.',
+      'j2.t':'Mengenal desain & gim','j2.d':'Mulai menjelajahi Figma, pixel art, dan logika di balik gim sederhana.',
+      'j3.t':'Menulis baris kode pertama','j3.d':'Sebuah halaman HTML sederhana — dan rasa ingin tahu itu tak pernah berhenti.',
+      'j4.y':'Selanjutnya','j4.t':'Membangun produk nyata','j4.d':'Magang, kontribusi open-source, dan merilis aplikasi yang benar-benar digunakan orang.',
+      'contact.label':'Kontak','contact.title':'Mari membangun sesuatu yang <em class="font-serif text-ash">bermakna.</em>',
+      'contact.desc':'Terbuka untuk proyek sekolah, kolaborasi, dan obrolan santai seputar kode dan desain.',
+      'contact.copied':'Tersalin ke papan klip','contact.location':'Lokasi','contact.region':'Jawa Tengah, Indonesia','contact.social':'Media sosial',
+      'form.name':'Nama Anda','form.name.ph':'Nama lengkap Anda','form.email':'Alamat email','form.topic':'Saya tertarik pada',
+      'chip.1':'Kolaborasi','chip.2':'Proyek sekolah','chip.3':'Situs web','chip.4':'Sekadar menyapa',
+      'form.msg':'Pesan','form.msg.ph':'Ceritakan ide Anda…','form.note':'Biasanya membalas dalam sehari','form.send':'Kirim pesan',
+      'form.sent':'Pesan terkirim — terima kasih!',
+      'footer.by':'Dirancang & dibuat oleh','footer.top':'Kembali ke atas','footer.rights':'Hak cipta dilindungi.',
+      roles:['Pengembang Web','Desainer UI','Pembuat Gim','Pembelajar Sejati'], cursorView:'Lihat'
+    }
+  };
+  let lang = 'en';
+  try { lang = localStorage.getItem('mx-lang') || 'en'; } catch(e){}
+
+  /* ---------- statement word split ---------- */
+  const statement = document.getElementById('statement');
+  let words = [];
+  function splitStatement(){
+    const text = statement.textContent.trim();
+    statement.innerHTML = text.split(/\s+/).map(w => '<span class="word">'+w+'</span>').join(' ');
+    words = statement.querySelectorAll('.word');
+    updateWords();
+  }
+  function updateWords(){
+    if(!words.length) return;
+    if(!document.body.classList.contains('anim-ready')){ words.forEach(w => w.style.opacity = 1); return; }
+    const r = statement.getBoundingClientRect(), vh = window.innerHeight;
+    const p = Math.min(1, Math.max(0, (vh*0.85 - r.top) / (r.height + vh*0.3)));
+    const n = Math.floor(p * words.length * 1.05);
+    words.forEach((w,i) => { w.style.opacity = i < n ? 1 : .16; });
+  }
+
+  /* ---------- i18n ---------- */
+  const indicator = document.getElementById('lang-indicator');
+  function moveIndicator(){
+    const btn = document.querySelector('.lang-btn[data-lang="'+lang+'"]');
+    indicator.style.left = btn.offsetLeft + 'px';
+    indicator.style.width = btn.offsetWidth + 'px';
+    document.querySelectorAll('.lang-btn').forEach(b => {
+      b.classList.toggle('text-ink', b.dataset.lang === lang);
+      b.classList.toggle('text-ash', b.dataset.lang !== lang);
+    });
+  }
+  function apply(){
+    const d = dict[lang];
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i18n]').forEach(el => { const k = el.dataset.i18n; if(d[k]) el.textContent = d[k]; });
+    document.querySelectorAll('[data-i18n-html]').forEach(el => { const k = el.dataset.i18nHtml; if(d[k]) el.innerHTML = d[k]; });
+    document.querySelectorAll('[data-i18n-ph]').forEach(el => { const k = el.dataset.i18nPh; if(d[k]) el.placeholder = d[k]; });
+    splitStatement();
+    roleIdx = 0; document.getElementById('role-text').textContent = d.roles[0];
+    moveIndicator();
+  }
+  function setLang(l){
+    if(l === lang) return;
+    lang = l; try{ localStorage.setItem('mx-lang', l); }catch(e){}
+    moveIndicator();
+    document.body.classList.add('i18n-swap');
+    setTimeout(() => { apply(); requestAnimationFrame(() => document.body.classList.remove('i18n-swap')); }, 320);
+  }
+  document.querySelectorAll('.lang-btn').forEach(b => b.addEventListener('click', () => setLang(b.dataset.lang)));
+
+  /* ---------- role rotator ---------- */
+  let roleIdx = 0;
+  const roleEl = document.getElementById('role-text');
+  setInterval(() => {
+    const roles = dict[lang].roles;
+    roleEl.style.transform = 'translateY(-110%)'; roleEl.style.opacity = '0';
+    setTimeout(() => {
+      roleIdx = (roleIdx + 1) % roles.length;
+      roleEl.textContent = roles[roleIdx];
+      roleEl.style.transition = 'none'; roleEl.style.transform = 'translateY(110%)';
+      void roleEl.offsetWidth;
+      roleEl.style.transition = ''; roleEl.style.transform = 'translateY(0)'; roleEl.style.opacity = '1';
+    }, 500);
+  }, 2600);
+
+  /* ---------- preloader ---------- */
+  const countEl = document.getElementById('loader-count');
+  const start = performance.now(), dur = 1000;
+  function tick(t){
+    const p = Math.min(1, (t - start) / dur);
+    const e = 1 - Math.pow(1 - p, 3);
+    countEl.textContent = String(Math.round(e*100)).padStart(3,'0');
+    if(p < 1) requestAnimationFrame(tick);
+    else setTimeout(() => { document.getElementById('preloader').classList.add('done'); document.body.classList.add('loaded'); }, 150);
+  }
+  requestAnimationFrame(tick);
+
+  /* ---------- clock ---------- */
+  const clock = document.getElementById('clock');
+  function updateClock(){
+    clock.textContent = new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Jakarta',hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' WIB';
+  }
+  updateClock(); setInterval(updateClock, 1000);
+
+  /* ---------- scroll line ---------- */
+  const sl = document.getElementById('scroll-line');
+  sl.animate([{transform:'translateY(-100%)'},{transform:'translateY(300%)'}],{duration:1800,iterations:Infinity,easing:'cubic-bezier(.6,0,.4,1)'});
+
+  /* ---------- reveal / counters / bars ---------- */
+  // Content is fully visible until the visitor first scrolls; then everything still
+  // below the fold is armed to animate in as it enters the viewport.
+  document.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w);
+  document.querySelectorAll('.count').forEach(c => c.textContent = c.dataset.to);
+  let armed = false;
+  function arm(){
+    if(armed) return; armed = true;
+    const vh = window.innerHeight;
+    document.querySelectorAll('.reveal').forEach(el => {
+      if(el.getBoundingClientRect().top < vh * 0.9){ el.classList.add('in'); el.querySelectorAll('.count').forEach(c => c.dataset.done = 1); }
+      else { el.querySelectorAll('.count').forEach(c => c.textContent = '0'); io.observe(el); }
+    });
+    document.body.classList.add('anim-ready');
+    updateWords();
+  }
+  ['scroll','wheel','touchstart','keydown'].forEach(ev => window.addEventListener(ev, arm, { passive:true, once:true }));
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(en => {
+      if(!en.isIntersecting) return;
+      const el = en.target;
+      el.classList.add('in');
+      el.querySelectorAll('.bar-fill').forEach(b => b.style.width = b.dataset.w);
+      el.querySelectorAll('.count').forEach(c => {
+        if(c.dataset.done) return; c.dataset.done = 1;
+        const to = +c.dataset.to, s = performance.now(), d = 1800;
+        (function step(t){ const p = Math.min(1,(t-s)/d); c.textContent = Math.round((1-Math.pow(1-p,4))*to); if(p<1) requestAnimationFrame(step); })(s);
+      });
+      io.unobserve(el);
+    });
+  }, { threshold: 0.12, rootMargin: '0px 0px -40px 0px' });
+
+  /* ---------- scroll handlers ---------- */
+  const header = document.getElementById('header'), progress = document.getElementById('progress');
+  const timeline = document.getElementById('timeline'), tlFill = document.getElementById('timeline-fill');
+  function onScroll(){
+    const y = window.scrollY, h = document.documentElement.scrollHeight - window.innerHeight;
+    progress.style.width = (h > 0 ? (y/h)*100 : 0) + '%';
+    if(y > 40){ header.classList.add('bg-ink/70','backdrop-blur-xl','border-b','border-white/10'); }
+    else { header.classList.remove('bg-ink/70','backdrop-blur-xl','border-b','border-white/10'); }
+    updateWords();
+    const r = timeline.getBoundingClientRect(), vh = window.innerHeight;
+    const p = Math.min(1, Math.max(0, (vh*0.6 - r.top) / r.height));
+    tlFill.style.height = (p*100) + '%';
+  }
+  window.addEventListener('scroll', onScroll, { passive:true });
+  window.addEventListener('resize', () => { onScroll(); moveIndicator(); });
+
+  /* ---------- hero spotlight ---------- */
+  const hero = document.getElementById('hero');
+  hero.addEventListener('mousemove', e => {
+    const r = hero.getBoundingClientRect();
+    hero.style.setProperty('--x', (e.clientX - r.left) + 'px');
+    hero.style.setProperty('--y', (e.clientY - r.top) + 'px');
+  });
+
+  /* ---------- cursor ---------- */
+  const dot = document.getElementById('cursor-dot'), ring = document.getElementById('cursor-ring'), label = document.getElementById('cursor-label');
+  let mx = -100, my = -100, rx = -100, ry = -100;
+  window.addEventListener('mousemove', e => { mx = e.clientX; my = e.clientY; dot.style.transform = 'translate('+(mx-3)+'px,'+(my-3)+'px)'; });
+  (function loop(){
+    rx += (mx - rx) * 0.16; ry += (my - ry) * 0.16;
+    ring.style.left = rx + 'px'; ring.style.top = ry + 'px';
+    requestAnimationFrame(loop);
+  })();
+  dot.classList.remove('-translate-x-1/2','-translate-y-1/2');
+  document.querySelectorAll('[data-cursor]').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      const v = el.dataset.cursor;
+      label.textContent = lang === 'id' ? ({View:'Lihat',Play:'Main',Work:'Karya'}[v] || v) : v;
+      ring.classList.add('active');
+    });
+    el.addEventListener('mouseleave', () => ring.classList.remove('active'));
+  });
+
+  /* ---------- magnetic ---------- */
+  document.querySelectorAll('.magnetic').forEach(el => {
+    el.style.transition = 'transform .5s cubic-bezier(.2,.8,.2,1), background-color .3s, color .3s';
+    el.addEventListener('mousemove', e => {
+      const r = el.getBoundingClientRect();
+      const x = (e.clientX - r.left - r.width/2) * 0.25, y = (e.clientY - r.top - r.height/2) * 0.35;
+      el.style.transform = 'translate('+x+'px,'+y+'px)';
+    });
+    el.addEventListener('mouseleave', () => el.style.transform = '');
+  });
+
+  /* ---------- mobile menu ---------- */
+  const menuBtn = document.getElementById('menu-btn'), menu = document.getElementById('mobile-menu');
+  function toggleMenu(open){
+    menu.classList.toggle('opacity-0', !open); menu.classList.toggle('invisible', !open);
+    menuBtn.innerHTML = open ? '<i class="fa-solid fa-xmark"></i>' : '<i class="fa-solid fa-bars-staggered"></i>';
+  }
+  menuBtn.addEventListener('click', () => toggleMenu(menu.classList.contains('invisible')));
+  document.querySelectorAll('.m-link').forEach(a => a.addEventListener('click', () => toggleMenu(false)));
+
+  /* ---------- chips ---------- */
+  document.querySelectorAll('.chip').forEach(c => c.addEventListener('click', () => {
+    const on = c.classList.toggle('bg-fog');
+    c.classList.toggle('text-ink', on); c.classList.toggle('text-ash', !on); c.classList.toggle('border-fog', on);
+  }));
+
+  /* ---------- copy email ---------- */
+  document.getElementById('copy-email').addEventListener('click', () => {
+    try { navigator.clipboard.writeText('hello@minzxit.dev'); } catch(e){}
+    const msg = document.getElementById('copy-msg'), icon = document.getElementById('copy-icon');
+    msg.classList.remove('opacity-0'); icon.className = 'fa-solid fa-check';
+    setTimeout(() => { msg.classList.add('opacity-0'); icon.className = 'fa-regular fa-copy'; }, 1800);
+  });
+
+  /* ---------- form ---------- */
+  document.getElementById('contact-form').addEventListener('submit', e => {
+    e.preventDefault();
+    const status = document.getElementById('form-status'), icon = document.getElementById('send-icon');
+    status.textContent = dict[lang]['form.sent']; status.classList.remove('text-steel'); status.classList.add('text-gold');
+    icon.className = 'fa-solid fa-check';
+    e.target.reset();
+    document.querySelectorAll('.chip.bg-fog').forEach(c => c.click());
+    setTimeout(() => {
+      status.textContent = dict[lang]['form.note']; status.classList.add('text-steel'); status.classList.remove('text-gold');
+      icon.className = 'fa-solid fa-arrow-right -rotate-45 group-hover:rotate-0 transition-transform duration-500';
+    }, 3200);
+  });
+
+  /* ---------- init ---------- */
+  apply();
+  onScroll();
+})();
+</script>
+<style>@media print{a[data-uxpilot-badge]{display:none!important}}</style><a data-uxpilot-badge="" href="https://uxpilot.ai/?utm_source=published_site&amp;utm_medium=badge&amp;utm_campaign=made_with&amp;utm_content=minzxit" target="_blank" rel="noopener" aria-label="Made with UX Pilot" style="all:initial !important;position:fixed !important;right:calc(12px + env(safe-area-inset-right, 0px)) !important;bottom:calc(12px + env(safe-area-inset-bottom, 0px)) !important;z-index:2147483647 !important;display:inline-flex !important;align-items:center !important;gap:6px !important;padding:6px 10px !important;border:1px solid rgba(19,5,55,.15) !important;border-radius:4px !important;box-shadow:0 2px 8px rgba(19,5,55,.12) !important;background:#fff !important;color:#130537 !important;font:500 12px/1.2 system-ui,-apple-system,'Segoe UI',Roboto,sans-serif !important;text-decoration:none !important;cursor:pointer !important"><svg viewBox="0 0 359 336" width="14" height="13" fill="currentColor" aria-hidden="true" style="all:unset!important;display:block!important;flex:none!important;width:14px!important;height:13px!important;fill:currentColor!important"><path d="M113.183 211.99C117.851 211.991 121.639 215.794 121.64 220.482V259.214C121.64 263.903 117.852 267.708 113.183 267.708H105.679C101.01 267.708 97.2227 263.903 97.2227 259.214V220.482C97.2227 215.793 101.011 211.99 105.679 211.99H113.183Z"></path><path d="M252.807 211.99C257.475 211.99 261.262 215.793 261.263 220.482V259.214C261.263 263.903 257.476 267.708 252.807 267.708H245.303C240.634 267.708 236.846 263.903 236.846 259.214V220.482C236.847 215.794 240.634 211.991 245.303 211.99H252.807Z"></path><path fill-rule="evenodd" clip-rule="evenodd" d="M286.962 0C291.631 0 295.419 3.805 295.419 8.494V16.03C295.419 20.719 291.631 24.522 286.962 24.522H198.251C193.582 24.522 189.624 28.801 189.624 33.49C189.624 37.82 192.987 42.633 197.275 43.088C264.046 50.193 317.002 95.364 326.269 149.072C340.966 166.345 358.483 200.186 358.484 235.856C358.484 271.525 348.256 294.071 333.082 310.889C319.099 326.415 298.35 334.763 270.884 335.96H87.6C60.134 334.763 39.385 326.415 25.402 310.889C10.228 294.071 0 271.525 0 235.856C0.001 200.186 17.518 166.345 32.215 149.072C41.482 95.364 94.438 50.193 161.209 43.088C165.497 42.633 168.86 37.82 168.86 33.49C168.86 28.801 164.902 24.522 160.233 24.522H71.521C66.853 24.522 63.065 20.719 63.065 16.03V8.494C63.065 3.805 66.853 0 71.521 0H286.962ZM268.121 173.543C235.558 173.543 205.85 185.481 183.077 205.457C180.929 207.338 177.555 207.338 175.407 205.457C152.634 185.481 122.926 173.543 90.363 173.543C74.596 173.543 55.291 177.883 41.005 183.159V302.755H317.479V183.159C303.193 177.883 283.888 173.543 268.121 173.543Z"></path></svg><span style="all:unset!important">Made with UX Pilot</span></a><script>(function(){var b=document.querySelector("a[data-uxpilot-badge]");if(!b||!document.elementsFromPoint)return;function pinned(e){for(;e&&e!==document.body&&e!==document.documentElement;e=e.parentElement){var s=getComputedStyle(e);if(s.position==="fixed"||s.position==="sticky")return+s.opacity>.05?e:null}return null}function barTop(){var r=b.getBoundingClientRect(),h=window.innerHeight,top=h,seen=[];for(var x=r.left+2;x<r.right;x+=20){[r.top+2,r.bottom-2].forEach(function(y){document.elementsFromPoint(Math.min(x,r.right-2),y).forEach(function(e){if(b.contains(e)||seen.indexOf(e)>-1)return;seen.push(e);var f=pinned(e);if(f){var q=f.getBoundingClientRect();if(q.top>h/2&&q.top<top)top=q.top}})})}return top}function place(){b.style.setProperty("bottom","calc(12px + env(safe-area-inset-bottom, 0px))","important");for(var i=0;i<4;i++){var h=window.innerHeight,top=barTop();if(top>=h)break;b.style.setProperty("bottom",(h-top+12)+"px","important")}}var queued=0;function later(){if(queued)return;queued=1;setTimeout(function(){queued=0;place()},150)}try{place();window.addEventListener("load",place);window.addEventListener("resize",later);window.addEventListener("scroll",later,{passive:true});if(window.MutationObserver)new MutationObserver(function(list){for(var i=0;i<list.length;i++)if(!b.contains(list[i].target)){later();return}}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:["style","class","hidden","open"]})}catch(e){}})()</script>
+</body></html>

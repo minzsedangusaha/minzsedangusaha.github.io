@@ -530,7 +530,7 @@ tailwind.config = {
         <div class="reveal r2">
           <p class="font-mono text-[11px] uppercase tracking-[0.2em] text-graphite mb-3">Email</p>
           <button id="copy-email" class="group flex items-center gap-4 text-2xl md:text-3xl tracking-tight text-fog">
-            <span class="link-u">hello@minzxit.dev</span>
+            <span class="link-u">minzzgood99@gmail.com</span>
             <span class="w-10 h-10 rounded-lg border border-white/15 grid place-items-center text-sm text-ash group-hover:bg-fog group-hover:text-ink transition-colors"><i id="copy-icon" class="fa-regular fa-copy"></i></span>
           </button>
           <p id="copy-msg" class="mt-2 font-mono text-[11px] uppercase tracking-[0.2em] text-gold opacity-0 transition-opacity" data-i18n="contact.copied">Copied to clipboard</p>
@@ -869,7 +869,7 @@ tailwind.config = {
 
   /* ---------- copy email ---------- */
   document.getElementById('copy-email').addEventListener('click', () => {
-    try { navigator.clipboard.writeText('hello@minzxit.dev'); } catch(e){}
+    try { navigator.clipboard.writeText('minzzgood99@gmail.com'); } catch(e){}
     const msg = document.getElementById('copy-msg'), icon = document.getElementById('copy-icon');
     msg.classList.remove('opacity-0'); icon.className = 'fa-solid fa-check';
     setTimeout(() => { msg.classList.add('opacity-0'); icon.className = 'fa-regular fa-copy'; }, 1800);
